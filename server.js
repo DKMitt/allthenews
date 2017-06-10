@@ -1,10 +1,8 @@
 // Dependencies
 var express = require("express");
-var mongojs = require("mongojs");
 // Require request and cheerio. This makes the scraping possible
 var request = require("request");
 var cheerio = require("cheerio");
-
 
 // Initialize Express
 var app = express();
@@ -14,7 +12,7 @@ var databaseUrl = "allTheNews";
 var collections = ["scrapedNews"];
 
 // Hook mongojs configuration to the db variable
-var db = mongojs(databaseUrl, collections);
+var db = mongo(databaseUrl, collections);
 db.on("error", function(error) {
   console.log("Database Error:", error);
 });
@@ -42,7 +40,7 @@ app.get("/all", function(req, res) {
 
 // Scrape data from one site and place it into the mongodb db
 app.get("/scrape", function(req, res) {
-  // Make a request for the news section of ycombinator
+  // Make a request for the news section of iotworldnews
   request("http://www.iotworldnews.com/", function(error, response, html) {
     // Load the html body from request into cheerio
     var $ = cheerio.load(html);
@@ -58,10 +56,11 @@ app.get("/scrape", function(req, res) {
       // If this title element had both a title and a link
       if (title && link) {
         // Save the data in the scrapedData db
-        db.scrapedData.save({
-          title: title,
-          link: link,
+        db.scrapedData.findAndModify({
+          update: {title: title,
+          link: link},
           //image: image
+          upsert: true
         },
         function(error, saved) {
           // If there's an error during this query
